@@ -1,0 +1,7 @@
+- Create N0120 device target for STM32H725.
+- Use DFU flashing only; do not add bootloader programming flow.
+- Start from the closest existing device target wiring and adapt build files.
+- Confirm keyboard layout.
+- Confirm PCB_LATEST value: 344
+- Confirm any N0120-specific OpenOCD/DFU identifiers if needed.
+- Add hardware code changes for STM32H725-specific paths after target scaffolding is in place.

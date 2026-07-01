@@ -34,6 +34,10 @@ all:
 	@ $(MAKE) clean
 	@ $(MAKE) epsilon.official.onboarding.dfu
 	@ cp output/release/device/n0110/epsilon.official.onboarding.dfu output/all_official/epsilon.device.n0110.dfu
+	@ echo "BUILD_FIRMWARE    DEVICE N0120"
+	@ $(MAKE) MODEL=n0120 clean
+	@ $(MAKE) MODEL=n0120 epsilon.official.onboarding.dfu
+	@ cp output/release/device/n0120/epsilon.official.onboarding.dfu output/all_official/epsilon.device.n0120.dfu
 	@ echo "BUILD_FIRMWARE    DEVICE N0100"
 	@ $(MAKE) MODEL=n0100 clean
 	@ $(MAKE) MODEL=n0100 epsilon.official.onboarding.dfu

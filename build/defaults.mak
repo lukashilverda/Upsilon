@@ -59,6 +59,8 @@ ifeq ("$(PLATFORM)", "device")
   SFLAGS += -DPLATFORM_DEVICE
   ifeq ("$(MODEL)", "n0100")
     SFLAGS += -DDEVICE_N0100
+  else ifeq ("$(MODEL)", "n0120")
+    SFLAGS += -DDEVICE_N0120
   else
     SFLAGS += -DDEVICE_N0110
   endif
