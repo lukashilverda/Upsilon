@@ -1,3 +1,6 @@
+// Include all shit
+
+
 #include <drivers/board.h>
 #include <drivers/cache.h>
 #include <drivers/internal_flash.h>
@@ -7,12 +10,12 @@
 #include <regs/regs.h>
 #include <ion.h>
 
-typedef void(*ISR)(void);
-extern ISR InitialisationVector[];
+typedef void(*ISR)(void); // Type of an interrupt service routine
+extern ISR InitialisationVector[]; // The initialisation vector is defined in the linker script
 
 // Public Ion methods
 
-const char * Ion::fccId() {
+const char * Ion::fccId() {    //FCC ID
   return "2ALWP-N0120";
 }
 
@@ -25,8 +28,8 @@ namespace Board {
 using namespace Regs;
 
 void bootloaderMPU() {
-  // 1. Disable the MPU
-  // 1.1 Memory barrier
+  // 1. Disable the MPU (memory protection unit)
+  // 1.1 Memory barrier (Data Memory Barrier) to ensure that all explicit memory accesses before this instruction are completed before any subsequent instructions are executed.
   Cache::dmb();
 
   // 1.3 Disable the MPU and clear the control register
@@ -37,7 +40,7 @@ void bootloaderMPU() {
   MPU.RASR()->setXN(false);
   MPU.RASR()->setENABLE(true);
 
-  // 2.3 Enable MPU
+  // 2.3 Enable MPU because the bootloader needs to access the external flash memory
   MPU.CTRL()->setENABLE(true);
 
   // 3. Data/instruction synchronisation barriers to ensure that the new MPU configuration is used by subsequent instructions.
@@ -138,9 +141,9 @@ void initMPU() {
 }
 
 void init() {
-  initFPU();
-  initMPU();
-  initClocks();
+  initFPU(); // Enable the floating point unit
+  initMPU(); // Enable the memory protection unit
+  initClocks(); // Configure the clock tree and enable peripheral clocks
 
   // The bootloader leaves its own after flashing
   //SYSCFG.MEMRMP()->setMEM_MODE(SYSCFG::MEMRMP::MemMode::MainFlashmemory);
@@ -158,9 +161,9 @@ void init() {
     GPIO(g).PUPDR()->set(0x00000000); // All to "None"
   }
 
-  ExternalFlash::init();
-  // Initiate L1 cache after initiating the external flash
-  Cache::enable();
+  ExternalFlash::init(); // Initialize the external flash memory
+ 
+  Cache::enable(); // Enable the L1 cache (instruction and data)
 }
 
 void initClocks() {
