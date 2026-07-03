@@ -9,6 +9,8 @@
 
 > 🇫🇷 Vous ne comprenez pas l'anglais ? Vous êtes francophone ? Regardez le [*LISEZ-MOI* français](./README.fr.md) ! 🇫🇷
 
+This repo is a fork of Upsilon, for the N0120
+
 ## About
 
 Upsilon is a fork of Omega, an user-made OS that runs on the NumWorks calculator, which brings many features to it, but was discontinued because of a policy change from NumWorks. Upsilon is for the people who want to see a future for user-made OSes for NumWorks, even after the closure and archiving of Omega.
