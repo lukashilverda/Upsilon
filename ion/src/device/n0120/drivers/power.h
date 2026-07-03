@@ -1,14 +1,20 @@
-#ifndef ION_DEVICE_N0120_POWER_H
-#define ION_DEVICE_N0120_POWER_H
-
-#include <ion/src/device/shared/drivers/power.h>
+#ifndef ION_DEVICE_SHARED_POWER_H
+#define ION_DEVICE_SHARED_POWER_H
 
 namespace Ion {
 namespace Device {
 namespace Power {
 
+void internalFlashSuspend(bool isLEDActive = false);
+void internalFlashStandby();
+void configWakeUp();
+
 void standbyConfiguration();
-void internalFlashSuspend(bool isLEDActive);
+void sleepConfiguration();
+void stopConfiguration();
+
+void waitUntilOnOffKeyReleased();
+void enterLowPowerMode();
 
 }
 }
