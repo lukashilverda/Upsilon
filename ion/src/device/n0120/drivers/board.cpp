@@ -1,4 +1,4 @@
-// Include all shit
+// IDK if it works, I have to look at it. 
 
 
 #include <drivers/board.h>
@@ -15,8 +15,8 @@ extern ISR InitialisationVector[]; // The initialisation vector is defined in th
 
 // Public Ion methods
 
-const char * Ion::fccId() {    //FCC ID
-  return "2ALWP-N0120";
+const char * Ion::fccId() {    //FCC ID, N0120
+  return "2ALWP-N0120";        
 }
 
 // Private Ion::Device methods
@@ -26,6 +26,9 @@ namespace Device {
 namespace Board {
 
 using namespace Regs;
+
+
+// I will look at this function later, I think it needs some changes to work with the N0120.
 
 void bootloaderMPU() {
   // 1. Disable the MPU (memory protection unit)

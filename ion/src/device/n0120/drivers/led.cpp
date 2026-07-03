@@ -1,3 +1,6 @@
+// Should work, check the LED wiring first
+
+
 #include <ion/led.h>
 #include <ion/battery.h>
 #include <ion/usb.h>

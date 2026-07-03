@@ -75,10 +75,13 @@ void initGPIO() {
 }
 
 void shutdownGPIO() {
-  constexpr static AFGPIOPin Pins[] = { Config::DpPin, Config::DmPin, Config::VbusPin };
+  constexpr static AFGPIOPin Pins[] = { Config::DpPin, Config::DmPin };
   for (const AFGPIOPin & p : Pins) {
     p.shutdown();
   }
+
+  Config::VbusPin.group().MODER()->setMode(Config::VbusPin.pin(), GPIO::MODER::Mode::Analog);
+  Config::VbusPin.group().PUPDR()->setPull(Config::VbusPin.pin(), GPIO::PUPDR::Pull::None);
 }
 
 void initOTG() {

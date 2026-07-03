@@ -1,3 +1,5 @@
+// DOES NOT WORK YET. Check wiring and configuration in ion/src/device/n0120/drivers/config/external_flash.h for the actual pinout.
+
 #include <drivers/external_flash.h>
 #include <drivers/cache.h>
 #include <drivers/config/external_flash.h>
