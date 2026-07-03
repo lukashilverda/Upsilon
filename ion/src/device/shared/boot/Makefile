@@ -3,7 +3,7 @@ ion_device_src += $(addprefix bootloader/boot/, \
   isr.c \
 )
 else
-ion_device_src += $(addprefix ion/src/device/shared/boot/, \
+ion_device_src += $(addprefix $(DEVICE_COMMON_DIR)/boot/, \
   isr.c \
 )
 endif
