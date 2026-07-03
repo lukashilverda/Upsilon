@@ -102,7 +102,7 @@ public:
   REGS_REGISTER_AT(AFR, 0x20);
 private:
   constexpr uint32_t Base() const {
-    return 0x40020000 + 0x400*m_index;
+    return 0x58020000 + 0x400*m_index;
   };
   int m_index;
 };
