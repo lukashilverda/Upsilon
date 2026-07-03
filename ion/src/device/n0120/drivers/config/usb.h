@@ -14,7 +14,7 @@ namespace Config {
 
 using namespace Regs;
 
-/* Verify the VBUS pin against the STM32H725 board schematic before shipping.
+/* Verify the VBUS pin against the STM32H725 board schematic.
  * This is kept as a placeholder for the current bring-up.
  */
 constexpr static AFGPIOPin VbusPin = AFGPIOPin(GPIOA, 9, GPIO::AFR::AlternateFunction::AF10, GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::Fast);
