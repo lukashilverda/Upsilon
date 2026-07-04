@@ -5,7 +5,7 @@
 
 /*  Pin | Role              | Mode                  | Function
  * -----+-------------------+-----------------------+----------
- *  PE0 | Backlight Enable  | Output                |
+ *  PD3 | Backlight Enable  | Output                |
  */
 
 namespace Ion {
@@ -15,7 +15,7 @@ namespace Config {
 
 using namespace Regs;
 
-constexpr static GPIOPin BacklightPin = GPIOPin(GPIOE, 0);
+constexpr static GPIOPin BacklightPin = GPIOPin(GPIOD, 3);
 
 }
 }
