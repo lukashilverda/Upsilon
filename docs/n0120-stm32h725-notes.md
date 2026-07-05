@@ -3,11 +3,11 @@
 This branch currently carries a compileable N0120 scaffold, but it is not a full STM32H725 hardware port yet.
 
 ## Current status
-- The device target exists and builds against the current legacy register model.
-- Register **base addresses** in `ion/src/device/n0120/regs/` have been updated to match the STM32H725 CMSIS header (`stm32h725xx.h`, RM0468 §2.3.2).
+- The device target exists and builds against the STM32H725 register model.
+- Register **base addresses** in `ion/src/device/n0120/regs/` match the STM32H725 CMSIS header (`stm32h725xx.h`, RM0468 §2.3.2).
+- **RCC**, **PWR**, and **FLASH** register layouts and drivers have been ported to H725 semantics.
 - The board and config files are still using placeholder limits that keep the tree buildable.
-- Register **layouts** (field offsets, RCC clock tree, flash controller, SDMMC vs SDIO, OCTOSPI vs QUADSPI) are not yet fully ported to H7 semantics.
-- `rcc.h` register map matches STM32H725 (`RCC_TypeDef` in CMSIS). Driver clock init still uses the legacy F730 API.
+- Register layouts for FMC, OCTOSPI, SDMMC, ADC, DMA, EXTI, SYSCFG, OTG are not yet fully ported to H7 semantics.
 
 ## Register base addresses (verified against CMSIS)
 | Peripheral | Address | CMSIS symbol |

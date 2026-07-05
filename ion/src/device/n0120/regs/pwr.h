@@ -10,70 +10,79 @@ namespace Regs {
 
 class PWR {
 public:
-  class CR : Register32 {
+  class CR1 : Register32 {
   public:
     REGS_BOOL_FIELD(LPDS, 0);
-    REGS_BOOL_FIELD(PPDS, 1);
-    REGS_BOOL_FIELD(CSBF, 3);
     REGS_BOOL_FIELD(DBP, 8);
-    REGS_BOOL_FIELD(FPDS, 9);
-    REGS_BOOL_FIELD(LPUDS, 10); // Called LPLVDS in N0100
-    REGS_BOOL_FIELD(MRUDS, 11); // Called MRLVDS in N100
-    enum class Voltage {
-      Scale3 = 0x01,
-      Scale2 = 0x10,
-      Scale1 = 0x11
+    REGS_BOOL_FIELD(FLPS, 9);
+    enum class SVOS : uint8_t {
+      VOS3 = 0,
+      VOS2 = 1,
+      VOS1 = 2,
+      VOS0 = 3
     };
-    REGS_FIELD_W(VOS, Voltage, 15, 14);
-#if REGS_PWR_CONFIG_ADDITIONAL_FIELDS
-    REGS_BOOL_FIELD_W(ODEN, 16);
-    REGS_BOOL_FIELD_W(ODSWEN, 17);
-    enum class UnderDrive {
-      Disable = 0,
-      Enable = 3
-    };
-    REGS_FIELD_W(UDEN, UnderDrive, 19, 18);
-#endif
+    REGS_FIELD_W(SVOS, SVOS, 15, 14);
   };
 
-  class CSR : Register32 {
+  class CSR1 : Register32 {
   public:
-    REGS_BOOL_FIELD_R(WUIF, 0);
-    REGS_BOOL_FIELD_R(SBF, 1);
-    REGS_BOOL_FIELD_R(BRR, 3);
-    REGS_BOOL_FIELD_W(EIWUP, 8);
-    REGS_BOOL_FIELD_W(BRE, 9);
-    REGS_BOOL_FIELD_R(VOSRDY, 14);
-#if REGS_PWR_CONFIG_ADDITIONAL_FIELDS
-    REGS_BOOL_FIELD_R(ODRDY, 16);
-    REGS_BOOL_FIELD_R(ODSWRDY, 17);
-#endif
+    REGS_BOOL_FIELD_R(PVDO, 4);
+    REGS_BOOL_FIELD_R(ACTVOSRDY, 13);
+    enum class ACTVOS : uint8_t {
+      VOS3 = 0,
+      VOS2 = 1,
+      VOS1 = 2,
+      VOS0 = 3
+    };
+    REGS_FIELD_R(ACTVOS, ACTVOS, 15, 14);
   };
 
-#if REGS_PWR_CONFIG_ADDITIONAL_FIELDS
   class CR2 : Register32 {
   public:
-    REGS_BOOL_FIELD_W(WUPP3, 10);
-    REGS_BOOL_FIELD_W(WUPP2, 9);
-    REGS_BOOL_FIELD_W(WUPP1, 8);
-    REGS_BOOL_FIELD_W(CWUPF1, 0);
+    REGS_BOOL_FIELD_W(BREN, 0);
   };
 
-  class CSR2 : Register32 {
+  class CPUCR : Register32 {
   public:
-    REGS_BOOL_FIELD_W(EWUP3, 10);
-    REGS_BOOL_FIELD_W(EWUP2, 9);
-    REGS_BOOL_FIELD_W(EWUP1, 8);
+    REGS_BOOL_FIELD_W(PDDS_D1, 0);
+    REGS_BOOL_FIELD_W(PDDS_D2, 1);
+    REGS_BOOL_FIELD_W(PDDS_D3, 2);
+    REGS_BOOL_FIELD_R(STOPF, 5);
+    REGS_BOOL_FIELD_R(SBF, 6);
+    REGS_BOOL_FIELD_W(CSSF, 9);
   };
-#endif
+
+  class D3CR : Register32 {
+  public:
+    REGS_BOOL_FIELD_R(VOSRDY, 13);
+    enum class VOS : uint8_t {
+      VOS3 = 0,
+      VOS2 = 1,
+      VOS1 = 2,
+      VOS0 = 3
+    };
+    REGS_FIELD_W(VOS, VOS, 15, 14);
+  };
+
+  class WKUPCR : Register32 {
+  public:
+    REGS_BOOL_FIELD_W(WKUPC1, 0);
+  };
+
+  class WKUPEPR : Register32 {
+  public:
+    REGS_BOOL_FIELD_W(WKUPEN1, 0);
+    REGS_BOOL_FIELD_W(WKUPP1, 8);
+  };
 
   constexpr PWR() {};
-  REGS_REGISTER_AT(CR, 0x00);
-  REGS_REGISTER_AT(CSR, 0x04);
-#if REGS_PWR_CONFIG_ADDITIONAL_FIELDS
+  REGS_REGISTER_AT(CR1, 0x00);
+  REGS_REGISTER_AT(CSR1, 0x04);
   REGS_REGISTER_AT(CR2, 0x08);
-  REGS_REGISTER_AT(CSR2, 0x0C);
-#endif
+  REGS_REGISTER_AT(CPUCR, 0x10);
+  REGS_REGISTER_AT(D3CR, 0x18);
+  REGS_REGISTER_AT(WKUPCR, 0x20);
+  REGS_REGISTER_AT(WKUPEPR, 0x28);
 private:
   constexpr uint32_t Base() const {
     return 0x58024800;

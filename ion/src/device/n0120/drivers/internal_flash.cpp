@@ -1,6 +1,7 @@
 #include "internal_flash.h"
 #include <drivers/cache.h>
 #include <drivers/config/internal_flash.h>
+#include <regs/config/flash.h>
 #include <assert.h>
 #include <algorithm>
 
@@ -10,42 +11,69 @@ namespace InternalFlash {
 
 using namespace Regs;
 
+#if REGS_FLASH_CONFIG_H725
+constexpr size_t FlashWordSize = 32;
+#endif
+
 static inline void wait() {
   /* Issue a DSB instruction to guarantee the completion of a previous access
-   * to FLASH_CR register or data write operation. (RM0431) */
+   * to the flash control register or data write operation. */
   Cache::dsb();
-  // Wait for pending Flash operations to complete
   while (FLASH.SR()->getBSY()) {
   }
 }
 
 static void open() {
-  // Unlock the Flash configuration register if needed
   if (FLASH.CR()->getLOCK()) {
-    // https://www.numworks.com/resources/engineering/hardware/electrical/parts/stm32f730-arm-mcu-reference-manual-1b6e1356.pdf#page=82
     FLASH.KEYR()->set(0x45670123);
     FLASH.KEYR()->set(0xCDEF89AB);
   }
   assert(FLASH.CR()->getLOCK() == false);
-
-  // Set the programming parallelism
   FLASH.CR()->setPSIZE(MemoryAccessWidth);
 }
 
 static void open_protection() {
-  if (FLASH.OPTCR()->getLOCK()) {
-    // https://www.numworks.com/resources/engineering/hardware/electrical/parts/stm32f730-arm-mcu-reference-manual-1b6e1356.pdf#page=82
+#if REGS_FLASH_CONFIG_H725
+  if (FLASH.OPTCR()->getOPTLOCK()) {
     FLASH.OPTKEYR()->set(0x08192A3B);
     FLASH.OPTKEYR()->set(0x4C5D6E7F);
   }
+#else
+  if (FLASH.OPTCR()->getLOCK()) {
+    FLASH.OPTKEYR()->set(0x08192A3B);
+    FLASH.OPTKEYR()->set(0x4C5D6E7F);
+  }
+#endif
 }
 
 static void close_protection() {
-  if(!FLASH.OPTCR()->getLOCK()) {
+#if REGS_FLASH_CONFIG_H725
+  if (!FLASH.OPTCR()->getOPTLOCK()) {
+    FLASH.OPTCR()->setOPTLOCK(true);
+  }
+#else
+  if (!FLASH.OPTCR()->getLOCK()) {
     FLASH.OPTCR()->setLOCK(true);
   }
+#endif
 }
 
+#if REGS_FLASH_CONFIG_H725
+static void set_sector_protection(int i, bool protect) {
+  if (FLASH.OPTCR()->getOPTLOCK()) {
+    return;
+  }
+  uint8_t wrpsn = FLASH.WPSN_PRG1()->getWRPSN();
+  if (protect) {
+    wrpsn &= static_cast<uint8_t>(~(1 << i));
+  } else {
+    wrpsn |= static_cast<uint8_t>(1 << i);
+  }
+  FLASH.WPSN_PRG1()->setWRPSN(wrpsn);
+  FLASH.OPTCR()->setOPTSTART(true);
+  wait();
+}
+#else
 static void disable_protection_at(int i) {
   if (!FLASH.OPTCR()->getLOCK()) {
     switch (i)
@@ -113,25 +141,33 @@ static void enable_protection_at(int i) {
     }
   }
 }
+#endif
 
 static void close() {
-  // Clear error flags
   class FLASH::SR sr(0);
-  // Error flags are cleared by writing 1
+#if REGS_FLASH_CONFIG_H725
+  sr.setWRPERR(true);
+  sr.setPGSERR(true);
+  sr.setOPERR(true);
+  sr.setEOP(true);
+#else
   sr.setERSERR(true);
   sr.setPGPERR(true);
   sr.setPGAERR(true);
   sr.setWRPERR(true);
   sr.setEOP(true);
+#endif
   FLASH.SR()->set(sr);
 
-  // Lock the Flash configuration register
+#if REGS_FLASH_CONFIG_H725
+  assert(!FLASH.CR()->getBER());
+#else
   assert(!FLASH.CR()->getMER());
+#endif
   assert(!FLASH.CR()->getSER());
   assert(!FLASH.CR()->getPG());
   FLASH.CR()->setLOCK(true);
 
-  // Purge Data and instruction cache
 #if REGS_FLASH_CONFIG_ART
   if (FLASH.ACR()->getARTEN()) {
     FLASH.ACR()->setARTEN(false);
@@ -139,7 +175,7 @@ static void close() {
     FLASH.ACR()->setARTRST(false);
     FLASH.ACR()->setARTEN(true);
   }
-#else
+#elif !REGS_FLASH_CONFIG_H725
   if (FLASH.ACR()->getDCEN()) {
     FLASH.ACR()->setDCEN(false);
     FLASH.ACR()->setDCRST(true);
@@ -155,13 +191,10 @@ static void close() {
 #endif
 }
 
-// Compile-time log2
 static inline constexpr size_t clog2(size_t input) {
   return (input == 1) ? 0 : clog2(input/2)+1;
 }
 
-// Align a pointer to a given type's boundaries
-// Returns a value that is lower or equal to input
 template <typename T>
 static inline T * align(void * input) {
   size_t k = clog2(sizeof(T));
@@ -180,17 +213,58 @@ static inline ptrdiff_t byte_offset(void * p1, void * p2) {
   return reinterpret_cast<uint8_t *>(p2) - reinterpret_cast<uint8_t *>(p1);
 }
 
-static void flash_memcpy(uint8_t * destination, uint8_t * source, size_t length) {
-  /* RM0402 3.5.4
-   * It is not allowed to program data to the Flash memory that would cross the
-   * 128-bit row boundary. In such a case, the write operation is not performed
-   * and a program alignment error flag (PGAERR) is set in the FLASH_SR
-   * register.
-   * The write access type (byte, half-word, word or double word) must
-   * correspond to the type of parallelism chosen (x8, x16, x32 or x64). If not,
-   * the write operation is not performed and a program parallelism error flag
-   * (PGPERR) is set in the FLASH_SR register. */
+#if REGS_FLASH_CONFIG_H725
+static void write_flash_word(uint32_t * destination, uint32_t * source) {
+  for (size_t i = 0; i < FlashWordSize / sizeof(uint32_t); i++) {
+    destination[i] = source[i];
+  }
+  wait();
+}
 
+static void flash_memcpy(uint8_t * destination, uint8_t * source, size_t length) {
+  uint8_t * alignedDestination = reinterpret_cast<uint8_t *>(align<uint32_t>(destination));
+  ptrdiff_t headerDelta = byte_offset(alignedDestination, destination);
+  assert(headerDelta >= 0 && headerDelta < static_cast<ptrdiff_t>(FlashWordSize));
+
+  if (headerDelta > 0) {
+    uint32_t flashWord[FlashWordSize / sizeof(uint32_t)];
+    uint8_t * flashWordBytes = reinterpret_cast<uint8_t *>(flashWord);
+    for (size_t i = 0; i < FlashWordSize; i++) {
+      flashWordBytes[i] = alignedDestination[i];
+    }
+    for (size_t i = static_cast<size_t>(headerDelta); i < FlashWordSize && length > 0; i++) {
+      flashWordBytes[i] = eat<uint8_t>(&source);
+      length--;
+    }
+    write_flash_word(reinterpret_cast<uint32_t *>(alignedDestination), flashWord);
+    alignedDestination += FlashWordSize;
+  }
+
+  while (length >= FlashWordSize) {
+    uint32_t flashWord[FlashWordSize / sizeof(uint32_t)];
+    uint8_t * flashWordBytes = reinterpret_cast<uint8_t *>(flashWord);
+    for (size_t i = 0; i < FlashWordSize; i++) {
+      flashWordBytes[i] = eat<uint8_t>(&source);
+    }
+    write_flash_word(reinterpret_cast<uint32_t *>(alignedDestination), flashWord);
+    alignedDestination += FlashWordSize;
+    length -= FlashWordSize;
+  }
+
+  if (length > 0) {
+    uint32_t flashWord[FlashWordSize / sizeof(uint32_t)];
+    uint8_t * flashWordBytes = reinterpret_cast<uint8_t *>(flashWord);
+    for (size_t i = 0; i < FlashWordSize; i++) {
+      flashWordBytes[i] = alignedDestination[i];
+    }
+    for (size_t i = 0; i < length; i++) {
+      flashWordBytes[i] = eat<uint8_t>(&source);
+    }
+    write_flash_word(reinterpret_cast<uint32_t *>(alignedDestination), flashWord);
+  }
+}
+#else
+static void flash_memcpy(uint8_t * destination, uint8_t * source, size_t length) {
   static_assert(
     sizeof(MemoryAccessType) == 1 ||
     sizeof(MemoryAccessType) == 2 ||
@@ -198,58 +272,24 @@ static void flash_memcpy(uint8_t * destination, uint8_t * source, size_t length)
     sizeof(MemoryAccessType) == 8,
   "Invalid MemoryAccessType");
 
-  /* So we may only perform memory writes with pointers of type MemoryAccessType
-   * and we must make sure to never cross 128 bit boundaries. This second
-   * requirement is satisfied iif the pointers are aligned on MemoryAccessType
-   * boundaries.
-   * Long story short: we want to perform writes to aligned(MemoryAccessType *).
-   */
-
-  /* Step 1 - Copy a header if needed
-   * We start by copying a Header, whose size is MemoryAccessType, to bring us
-   * back on aligned tracks.
-   *
-   *             _AlignedDst       _DESTINATION
-   *            |                 |
-   * --+--------+--------+--------+--------+--------+--------+--
-   *   |        ||       |        |        |        ||       |
-   *---+--------+--------+--------+--------+--------+--------+--
-   *            |<------------ Header ------------->|
-   *            |-- HeaderDelta ->|
-   */
-
   MemoryAccessType * alignedDestination = align<MemoryAccessType>(destination);
   ptrdiff_t headerDelta = byte_offset(alignedDestination, destination);
   assert(headerDelta >= 0 && headerDelta < static_cast<ptrdiff_t>(sizeof(MemoryAccessType)));
 
   if (headerDelta > 0) {
-    // At this point, alignedDestination < destination
-    // We'll then retrieve the current value at alignedDestination, fill it with
-    // bytes from source, and write it back at alignedDestination.
-
-    // First, retrieve the current value at alignedDestination
     MemoryAccessType header = *alignedDestination;
-
-    // Then copy headerLength bytes from source and put them in the header
     uint8_t * headerStart = reinterpret_cast<uint8_t *>(&header);
-    // Here's where source data shall start being copied in the header
     uint8_t * headerDataStart = headerStart + headerDelta;
-    // And here's where it should end
     uint8_t * headerDataEnd = std::min(
-      headerStart + sizeof(MemoryAccessType), // Either at the end of the header
-      headerDataStart + length // or whenever src runs out of data
+      headerStart + sizeof(MemoryAccessType),
+      headerDataStart + length
     );
     for (uint8_t * h = headerDataStart; h<headerDataEnd; h++) {
       *h = eat<uint8_t>(&source);
     }
-
-    // Then eventually write the header back into the aligned destination
     *alignedDestination++ = header;
     wait();
   }
-
-  /* Step 2 - Copy the bulk of the data
-   * At this point, we can use aligned MemoryAccessType pointers. */
 
   MemoryAccessType * lastAlignedDestination = align<MemoryAccessType>(destination + length);
   while (alignedDestination < lastAlignedDestination) {
@@ -257,39 +297,20 @@ static void flash_memcpy(uint8_t * destination, uint8_t * source, size_t length)
     wait();
   }
 
-  /* Step 3 - Copy a footer if needed
-   * Some unaligned data can be pending at the end. Let's take care of it like
-   * we did for the header.
-   *
-   *             _alignedDst       _Destination+length
-   *            |                 |
-   * --+--------+--------+--------+--------+--------+--------+--
-   *   |        ||       |        |        |        ||       |
-   *---+--------+--------+--------+--------+--------+--------+--
-   *            |<------------ Footer ------------->|
-   *            |- footerLength ->|
-   */
-
   ptrdiff_t footerLength = byte_offset(alignedDestination, destination + length);
   assert(footerLength < static_cast<ptrdiff_t>(sizeof(MemoryAccessType)));
   if (footerLength > 0) {
     assert(alignedDestination == lastAlignedDestination);
-
-    // First, retrieve the current value at alignedDestination
     MemoryAccessType footer = *alignedDestination;
-
-    /* Then copy footerLength bytes from source and put them at the beginning of
-     * the footer */
     uint8_t * footerPointer = reinterpret_cast<uint8_t *>(&footer);
     for (ptrdiff_t i=0; i<footerLength; i++) {
       footerPointer[i] = eat<uint8_t>(&source);
     }
-
-    // Then eventually write the footer back into the aligned destination
     *alignedDestination = footer;
     wait();
   }
 }
+#endif
 
 int SectorAtAddress(uint32_t address) {
   for (int i = 0; i < Config::NumberOfSectors; i++) {
@@ -302,20 +323,30 @@ int SectorAtAddress(uint32_t address) {
 
 void MassErase() {
   open();
+#if REGS_FLASH_CONFIG_H725
+  FLASH.CR()->setBER(true);
+  FLASH.CR()->setSTART(true);
+  wait();
+  FLASH.CR()->setBER(false);
+#else
   FLASH.CR()->setMER(true);
   FLASH.CR()->setSTRT(true);
   wait();
   FLASH.CR()->setMER(false);
+#endif
   close();
 }
-
 
 void EraseSector(int i) {
   assert(i >= 0 && i < Config::NumberOfSectors);
   open();
   FLASH.CR()->setSNB(i);
   FLASH.CR()->setSER(true);
+#if REGS_FLASH_CONFIG_H725
+  FLASH.CR()->setSTART(true);
+#else
   FLASH.CR()->setSTRT(true);
+#endif
   wait();
   FLASH.CR()->setSNB(0);
   FLASH.CR()->setSER(false);
@@ -339,44 +370,61 @@ void DisableProtection() {
 }
 
 void SetSectorProtection(int i, bool protect) {
+#if REGS_FLASH_CONFIG_H725
+  set_sector_protection(i, protect);
+#else
   if (protect) {
     enable_protection_at(i);
   } else {
     disable_protection_at(i);
   }
+#endif
 }
 
 void EnableSessionLock() {
+#if REGS_FLASH_CONFIG_H725
+  if (FLASH.OPTCR()->getOPTLOCK()) {
+#else
   if (FLASH.OPTCR()->getLOCK()) {
-    // writing bullshit to the lock register to lock it until next core reset
-    // https://www.numworks.com/resources/engineering/hardware/electrical/parts/stm32f730-arm-mcu-reference-manual-1b6e1356.pdf#page=82
-    // > "In the event of an unsuccessful unlock operation, this bit remains set until the next reset."
+#endif
     FLASH.OPTKEYR()->set(0x00000000);
     FLASH.OPTKEYR()->set(0xFFFFFFFF);
-
-    // Now, a bus fault error is triggered
   }
 }
 
 void EnableFlashInterrupt() {
   open();
+#if REGS_FLASH_CONFIG_H725
+  FLASH.CR()->setWRPERRIE(true);
+  wait();
+  FLASH.CR()->setPGSERRIE(true);
+  wait();
+  FLASH.CR()->setOPERRIE(true);
+#else
   FLASH.CR()->setERRIE(true);
   wait();
   FLASH.CR()->setEOPIE(true);
   wait();
   FLASH.CR()->setRDERRIE(true);
+#endif
   wait();
   close();
 }
 
 void ClearErrors() {
   class FLASH::SR sr(0);
-  // Error flags are cleared by writing 1
+#if REGS_FLASH_CONFIG_H725
+  sr.setWRPERR(true);
+  sr.setPGSERR(true);
+  sr.setOPERR(true);
+  sr.setEOP(true);
+#else
   sr.setERSERR(true);
   sr.setPGPERR(true);
   sr.setPGAERR(true);
   sr.setWRPERR(true);
   sr.setEOP(true);
+#endif
   FLASH.SR()->set(sr);
 }
 

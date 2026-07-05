@@ -204,29 +204,14 @@ void initClocks() {
   RCC.PLLCFGR()->setPLL1PEN(true);
   RCC.PLLCFGR()->setPLL1QEN(true);
 
-  // Enable Over-drive
-  PWR.CR()->setODEN(true);
-  while(!PWR.CSR()->getODRDY()) {
-  }
-
-  PWR.CR()->setODSWEN(true);
-  while(!PWR.CSR()->getODSWRDY()) {
-  }
-
-  // Choose Voltage scale 1
-  PWR.CR()->setVOS(PWR::CR::Voltage::Scale1);
-  while (!PWR.CSR()->getVOSRDY()) {}
+  // Voltage scale 1 (VOS1) for 192 MHz operation on STM32H725
+  PWR.D3CR()->setVOS(PWR::D3CR::VOS::VOS1);
+  while (!PWR.D3CR()->getVOSRDY()) {}
 
   /* After reset the Flash runs as fast as the CPU. When we clock the CPU faster
    * the flash memory cannot follow and therefore flash memory accesses need to
    * wait a little bit. */
-  FLASH.ACR()->setLATENCY(7);
-
-  /* Enable prefetching flash instructions */
-  FLASH.ACR()->setPRFTEN(true);
-
-  /* Enable the ART */
-  FLASH.ACR()->setARTEN(true);
+  FLASH.ACR()->setLATENCY(2);
 
   // 192 MHz is too fast for APB1. Divide it by four to reach 48 MHz
   RCC.D2CFGR()->setD2PPRE1(Clocks::Config::APB1PrescalerReg);
