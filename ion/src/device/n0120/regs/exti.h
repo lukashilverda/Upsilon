@@ -29,7 +29,7 @@ public:
   REGS_REGISTER_AT(PR, 0x14);
 private:
   constexpr uint32_t Base() const {
-    return 0x40013C00;
+    return 0x58000000;
   }
 };
 

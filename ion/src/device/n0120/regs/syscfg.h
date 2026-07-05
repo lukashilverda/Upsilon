@@ -51,7 +51,7 @@ public:
   REGS_REGISTER_AT(CMPCR, 0x20);
 private:
   constexpr uint32_t Base() const {
-    return 0x40013800;
+    return 0x58000400;
   }
 };
 

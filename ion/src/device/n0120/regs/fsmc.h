@@ -74,7 +74,7 @@ public:
   }
 private:
   constexpr uint32_t Base() const {
-    return 0xA0000000;
+    return 0x52004000;
   };
 };
 

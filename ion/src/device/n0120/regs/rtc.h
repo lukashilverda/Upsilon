@@ -86,7 +86,7 @@ public:
   REGS_REGISTER_AT(WPR, 0x24);
 private:
   constexpr uint32_t Base() const {
-    return 0x40002800;
+    return 0x58004000;
   };
 };
 

@@ -4,8 +4,31 @@ This branch currently carries a compileable N0120 scaffold, but it is not a full
 
 ## Current status
 - The device target exists and builds against the current legacy register model.
+- Register **base addresses** in `ion/src/device/n0120/regs/` have been updated to match the STM32H725 CMSIS header (`stm32h725xx.h`, RM0468 §2.3.2).
 - The board and config files are still using placeholder limits that keep the tree buildable.
-- The repo does not yet contain a real STM32H725 register model, so H7-specific clock, power, flash, and bus-domain behavior is not final.
+- Register **layouts** (field offsets, RCC clock tree, flash controller, SDMMC vs SDIO, OCTOSPI vs QUADSPI) are not yet fully ported to H7 semantics.
+
+## Register base addresses (verified against CMSIS)
+| Peripheral | Address | CMSIS symbol |
+|------------|---------|--------------|
+| EXTI | `0x58000000` | `EXTI_BASE` |
+| SYSCFG | `0x58000400` | `SYSCFG_BASE` |
+| RTC | `0x58004000` | `RTC_BASE` |
+| GPIOA–H | `0x58020000` + n×`0x400` | `GPIOx_BASE` |
+| RCC | `0x58024400` | `RCC_BASE` |
+| PWR | `0x58024800` | `PWR_BASE` |
+| CRC | `0x58024C00` | `CRC_BASE` |
+| FLASH (regs) | `0x52002000` | `FLASH_R_BASE` |
+| FMC | `0x52004000` | `FMC_R_BASE` |
+| OCTOSPI1 (regs) | `0x52005000` | `OCTOSPI1_R_BASE` |
+| SDMMC1 | `0x52007000` | `SDMMC1_BASE` |
+| DMA1 / DMA2 | `0x40020000` / `0x40020400` | `DMAx_BASE` |
+| ADC1 | `0x40022000` | `ADC1_BASE` |
+| USB OTG HS | `0x40040000` | `USB1_OTG_HS_PERIPH_BASE` |
+| RNG | `0x48021800` | `RNG_BASE` |
+| USART / SPI / TIM | unchanged (D2 APB) | same offsets as F7 |
+
+Cortex-M7 core peripherals (NVIC, SCB, MPU, ITM) are architecture-defined and unchanged.
 
 ## Files that still need a real H725 pass
 - ion/src/device/n0120/drivers/board.cpp

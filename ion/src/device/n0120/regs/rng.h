@@ -28,7 +28,7 @@ public:
   REGS_REGISTER_AT(DR, 0x08);
 private:
   constexpr uint32_t Base() const {
-    return 0x50060800;
+    return 0x48021800;
   }
 };
 

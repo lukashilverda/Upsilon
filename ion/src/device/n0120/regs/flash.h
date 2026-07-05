@@ -84,7 +84,7 @@ public:
   REGS_REGISTER_AT(OPTCR, 0x14);
 private:
   constexpr uint32_t Base() const {
-    return 0x40023C00;
+    return 0x52002000;
   }
 };
 
