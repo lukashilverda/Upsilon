@@ -45,8 +45,6 @@ namespace USB {
 
 using namespace Regs;
 
-namespace USB {
-
 bool useAlternateFunctionVbus() {
   return Board::pcbVersion() == 0;
 }

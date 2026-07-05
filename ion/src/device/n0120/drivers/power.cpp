@@ -173,7 +173,7 @@ void waitUntilOnOffKeyReleased() {
     Keyboard::State scan = Keyboard::scan();
     isPowerDown = scan.keyDown(Keyboard::Key::OnOff);
   }
-  Timing::msleep(100);
+  Ion::Timing::msleep(100);
 }
 
 void __attribute__((noinline)) internalFlashSuspend(bool isLEDActive) {

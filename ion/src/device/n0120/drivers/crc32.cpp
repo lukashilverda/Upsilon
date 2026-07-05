@@ -7,8 +7,8 @@ using namespace Device::Regs;
 
 uint32_t crc32Byte(const uint8_t * data, size_t length) {
   uint32_t result = 0;
-  bool initialCRCEngineState = RCC.AHB1ENR()->getCRCEN();
-  RCC.AHB1ENR()->setCRCEN(true);
+  bool initialCRCEngineState = RCC.AHB4ENR()->getCRCEN();
+  RCC.AHB4ENR()->setCRCEN(true);
   CRC.CR()->setRESET(true);
 
   const uint8_t * end = data + length;
@@ -33,7 +33,7 @@ uint32_t crc32Byte(const uint8_t * data, size_t length) {
   }
 #endif
 
-  RCC.AHB1ENR()->setCRCEN(initialCRCEngineState);
+  RCC.AHB4ENR()->setCRCEN(initialCRCEngineState);
   return result;
 }
 

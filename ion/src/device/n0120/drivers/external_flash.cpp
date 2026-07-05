@@ -318,7 +318,7 @@ static void initGPIO() {
 
 static void initQSPI() {
   // Enable QUADSPI AHB3 peripheral clock
-  RCC.AHB3ENR()->setQSPIEN(true);
+  RCC.AHB3ENR()->setOSPI1EN(true);
 
  // Configure controller for target device
   class QUADSPI::DCR dcr(0);
@@ -384,10 +384,10 @@ static void shutdownChip() {
 
 static void shutdownQSPI() {
   // Reset the controller
-  RCC.AHB3RSTR()->setQSPIRST(true);
-  RCC.AHB3RSTR()->setQSPIRST(false);
+  RCC.AHB3RSTR()->setOSPI1RST(true);
+  RCC.AHB3RSTR()->setOSPI1RST(false);
 
-  RCC.AHB3ENR()->setQSPIEN(false); // TODO: move in Device::shutdownClocks
+  RCC.AHB3ENR()->setOSPI1EN(false); // TODO: move in Device::shutdownClocks
 }
 
 void shutdown() {

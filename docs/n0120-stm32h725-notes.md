@@ -7,6 +7,7 @@ This branch currently carries a compileable N0120 scaffold, but it is not a full
 - Register **base addresses** in `ion/src/device/n0120/regs/` have been updated to match the STM32H725 CMSIS header (`stm32h725xx.h`, RM0468 §2.3.2).
 - The board and config files are still using placeholder limits that keep the tree buildable.
 - Register **layouts** (field offsets, RCC clock tree, flash controller, SDMMC vs SDIO, OCTOSPI vs QUADSPI) are not yet fully ported to H7 semantics.
+- `rcc.h` register map matches STM32H725 (`RCC_TypeDef` in CMSIS). Driver clock init still uses the legacy F730 API.
 
 ## Register base addresses (verified against CMSIS)
 | Peripheral | Address | CMSIS symbol |
