@@ -79,11 +79,11 @@ namespace Keyboard {
 using namespace Regs;
 
 void init() {
-#if REGS_PWR_CONFIG_ADDITIONAL_FIELDS
+#if REGS_PWR_CONFIG_H725
   /* PA0 pin is also used as the wake up pin of the standby mode. It has to be
    * unable to be used in output mode, open-drain for the keyboard. */
-  PWR.CSR2()->setEWUP1(false); // Disable PA0 as wakeup pin
-  PWR.CR2()->setCWUPF1(true); // Clear wakeup pin flag for PA0
+  PWR.WKUPEPR()->setWKUPEN1(false);
+  PWR.WKUPCR()->setWKUPC1(true);
 #endif
 
   for (uint8_t i=0; i<Config::numberOfRows; i++) {

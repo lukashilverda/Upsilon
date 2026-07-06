@@ -73,7 +73,7 @@ void init() {
   Config::ADCPin.group().MODER()->setMode(Config::ADCPin.pin(), GPIO::MODER::Mode::Analog);
 
   // Step 2 - Enable the ADC
-  RCC.APB2ENR()->setADC1EN(true);
+  RCC.AHB1ENR()->setADC12EN(true);
   ADC.CR2()->setADON(true);
 
   // Configure the ADC channel
@@ -98,7 +98,7 @@ void shutdown() {
 
   // Disable the ADC
   ADC.CR2()->setADON(false);
-  RCC.APB2ENR()->setADC1EN(false);
+  RCC.AHB1ENR()->setADC12EN(false);
 }
 
 }

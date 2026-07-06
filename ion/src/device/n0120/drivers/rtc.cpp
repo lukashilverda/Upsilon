@@ -24,13 +24,13 @@ namespace RTC {
 
 static void rtcSetWriteEnable(bool status) {
   if (status) {
-    Device::Regs::PWR.CR()->setDBP(true);
+    Device::Regs::PWR.CR1()->setDBP(true);
     Device::Regs::RTC.WPR()->setKEY(0xCA);
     Device::Regs::RTC.WPR()->setKEY(0x53);
   }
   else {
     Device::Regs::RTC.WPR()->setKEY(0xFF);
-    Device::Regs::PWR.CR()->setDBP(false);
+    Device::Regs::PWR.CR1()->setDBP(false);
   }
 }
 

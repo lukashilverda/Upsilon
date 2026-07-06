@@ -9,7 +9,7 @@ namespace SWD {
 namespace Config {
 
 using namespace Regs;
-
+// the same as the f730
 constexpr static AFGPIOPin Pins[] = {
   AFGPIOPin(GPIOA, 13, GPIO::AFR::AlternateFunction::AF0, GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::High),
   AFGPIOPin(GPIOA, 14, GPIO::AFR::AlternateFunction::AF0, GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::High),

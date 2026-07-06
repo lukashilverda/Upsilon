@@ -107,7 +107,7 @@ public:
   REGS_REGISTER_AT(ICR, 0x38);
 private:
   constexpr uint32_t Base() const {
-    return 0x40012C00;
+    return 0x52007000;
   }
 };
 

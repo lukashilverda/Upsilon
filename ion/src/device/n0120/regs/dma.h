@@ -56,7 +56,7 @@ public:
   volatile SM0AR * SM0AR(int i ) const { return (class SM0AR *)(Base() + 0x1C + 0x18*i); };
 private:
   constexpr uint32_t Base() const {
-    return 0x40026000 + 0x400*m_index;
+    return 0x40020000 + 0x400*m_index;
   };
   int m_index;
 };

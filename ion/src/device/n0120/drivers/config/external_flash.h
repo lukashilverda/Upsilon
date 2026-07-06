@@ -6,9 +6,9 @@
 /*  Pin | Role                 | Mode                  | Function
  * -----+----------------------+-----------------------+-----------------
  *  PB2 | QUADSPI CLK          | Alternate Function  9 | QUADSPI_CLK
- *  PB6 | QUADSPI BK1_NCS      | Alternate Function 10 | QUADSPI_BK1_NCS
- *  PE2 | QUADSPI BK1_IO2/WP   | Alternate Function  9 | QUADSPI_BK1_IO2
- *  PC9 | QUADSPI BK1_IO0/SO   | Alternate Function  9 | QUADSPI_BK1_IO0
+ * PB10 | QUADSPI BK1_NCS      | Alternate Function  9 | QUADSPI_BK1_NCS
+ * PB13 | QUADSPI BK1_IO2/WP   | Alternate Function 10 | QUADSPI_BK1_IO2
+ * PB12 | QUADSPI BK1_IO0/SO   | Alternate Function 10 | QUADSPI_BK1_IO0
  * PD12 | QUADSPI BK1_IO1/SI   | Alternate Function  9 | QUADSPI_BK1_IO1
  * PD13 | QUADSPI BK1_IO3/HOLD | Alternate Function  9 | QUADSPI_BK1_IO3
  */
@@ -30,11 +30,11 @@ constexpr static int NumberOfSectors = NumberOf4KSectors + NumberOf32KSectors + 
 
 constexpr static AFGPIOPin Pins[] = {
   AFGPIOPin(GPIOB, 2,  GPIO::AFR::AlternateFunction::AF9, GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::Fast),
-  AFGPIOPin(GPIOB, 6,  GPIO::AFR::AlternateFunction::AF10,  GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::Fast),
-  AFGPIOPin(GPIOC, 9,  GPIO::AFR::AlternateFunction::AF9, GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::Fast),
+  AFGPIOPin(GPIOB, 12,  GPIO::AFR::AlternateFunction::AF10,  GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::Fast),
+  AFGPIOPin(GPIOB, 13,  GPIO::AFR::AlternateFunction::AF10, GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::Fast),
   AFGPIOPin(GPIOD, 12, GPIO::AFR::AlternateFunction::AF9, GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::Fast),
   AFGPIOPin(GPIOD, 13, GPIO::AFR::AlternateFunction::AF9, GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::Fast),
-  AFGPIOPin(GPIOE, 2,  GPIO::AFR::AlternateFunction::AF9, GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::Fast),
+  AFGPIOPin(GPIOB, 10,  GPIO::AFR::AlternateFunction::AF9, GPIO::PUPDR::Pull::None, GPIO::OSPEEDR::OutputSpeed::Fast),
 };
 
 }

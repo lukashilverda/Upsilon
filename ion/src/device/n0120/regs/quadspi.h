@@ -122,7 +122,7 @@ public:
   REGS_REGISTER_AT(LPTR, 0x30);
 private:
   constexpr uint32_t Base() const {
-    return 0xA0001000;
+    return 0x52005000;
   }
 };
 

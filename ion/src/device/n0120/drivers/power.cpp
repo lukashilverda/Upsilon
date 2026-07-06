@@ -117,10 +117,11 @@ void configWakeUp() {
 using namespace Device::Regs;
 
 void standbyConfiguration() {
-  PWR.CR()->setPPDS(true); // Select standby when the CPU enters deepsleep
-  PWR.CR()->setCSBF(true); // Clear Standby flag
-  PWR.CSR()->setBRE(false); // Unable back up RAM (lower power consumption in standby)
-  PWR.CSR()->setEIWUP(false); // Unable RTC (lower power consumption in standby)
+  PWR.CPUCR()->setPDDS_D1(true);
+  PWR.CPUCR()->setPDDS_D2(true);
+  PWR.CPUCR()->setPDDS_D3(true);
+  PWR.CPUCR()->setCSSF(true);
+  PWR.CR2()->setBREN(false);
 
   /* The pin A0 is about to be configured as a wakeup pin. However, the matrix
    * keyboard connects pin A0 (row B) with other pins (column 1, column 3...).
@@ -129,39 +130,24 @@ void standbyConfiguration() {
    * pulled-up so enabling it as the wake up pin would trigger a wake up flag
    * instantly. */
   Device::Keyboard::shutdown();
-#if REGS_PWR_CONFIG_ADDITIONAL_FIELDS
-  PWR.CSR2()->setEWUP1(true); // Enable PA0 as wakeup pin
-  PWR.CR2()->setWUPP1(false); // Define PA0 (wakeup) pin polarity (rising edge)
-  PWR.CR2()->setCWUPF1(true); // Clear wakeup pin flag for PA0 (if device has already been in standby and woke up)
-#endif
+  PWR.WKUPCR()->setWKUPC1(true);
+  PWR.WKUPEPR()->setWKUPEN1(true);
+  PWR.WKUPEPR()->setWKUPP1(false);
 
-  CORTEX.SCR()->setSLEEPDEEP(true); // Allow Cortex-M7 deepsleep state
+  CORTEX.SCR()->setSLEEPDEEP(true);
 }
 
 void stopConfiguration() {
-  PWR.CR()->setMRUDS(true); // Main regulator in Low Voltage and Flash memory in Deep Sleep mode when the device is in Stop mode
-  PWR.CR()->setLPUDS(true); // Low-power regulator in under-drive mode if LPDS bit is set and Flash memory in power-down when the device is in Stop under-drive mode
-  PWR.CR()->setLPDS(true); // Low-power Voltage regulator on. Takes longer to wake up.
-  PWR.CR()->setFPDS(true); // Put the flash to sleep. Takes longer to wake up.
-#if REGS_PWR_CONFIG_ADDITIONAL_FIELDS
-  PWR.CR()->setUDEN(PWR::CR::UnderDrive::Enable);
-#endif
+  PWR.CR1()->setLPDS(true);
+  PWR.CR1()->setFLPS(true);
+  PWR.CR1()->setSVOS(PWR::CR1::SVOS::VOS3);
 
   CORTEX.SCR()->setSLEEPDEEP(true);
 }
 
 void sleepConfiguration() {
-  // Decrease HCLK frequency
   Device::Board::setStandardFrequency(Device::Board::Frequency::Low);
   Device::Board::setClockFrequency(Device::Board::standardFrequency());
-
-#if REGS_PWR_CONFIG_ADDITIONAL_FIELDS
-  // Disable over-drive
-  PWR.CR()->setODSWEN(false);
-  while(!PWR.CSR()->getODSWRDY()) {
-  }
-  PWR.CR()->setODEN(true);
-#endif
 
   CORTEX.SCR()->setSLEEPDEEP(false);
 }
@@ -173,7 +159,7 @@ void waitUntilOnOffKeyReleased() {
     Keyboard::State scan = Keyboard::scan();
     isPowerDown = scan.keyDown(Keyboard::Key::OnOff);
   }
-  Timing::msleep(100);
+  Ion::Timing::msleep(100);
 }
 
 void __attribute__((noinline)) internalFlashSuspend(bool isLEDActive) {

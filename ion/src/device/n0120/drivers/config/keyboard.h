@@ -6,21 +6,22 @@
 
 /*  Pin | Role              | Mode
  * -----+-------------------+--------------------
- *  PC0 | Keyboard column 1 | Input, pulled up
- *  PC1 | Keyboard column 2 | Input, pulled up
- *  PC2 | Keyboard column 3 | Input, pulled up
- *  PC3 | Keyboard column 4 | Input, pulled up
- *  PC4 | Keyboard column 5 | Input, pulled up
- *  PC5 | Keyboard column 6 | Input, pulled up
+ *  PC1 | Keyboard column 1 | Input, pulled up
+ *  PC9 | Keyboard column 2 | Input, pulled up
+ *  PC11 | Keyboard column 3 | Input, pulled up
+ *  PC4 | Keyboard column 4 | Input, pulled up
+ *  PC5 | Keyboard column 5 | Input, pulled up
+ *  PC6 | Keyboard column 6 | Input, pulled up
  *  PA1 | Keyboard row A    | Output, open drain
  *  PA0 | Keyboard row B    | Output, open drain
  *  PA2 | Keyboard row C    | Output, open drain
  *  PA3 | Keyboard row D    | Output, open drain
- *  PA4 | Keyboard row E    | Output, open drain
- *  PA5 | Keyboard row F    | Output, open drain
- *  PA6 | Keyboard row G    | Output, open drain
- *  PA7 | Keyboard row H    | Output, open drain
- *  PA8 | Keyboard row I    | Output, open drain
+ *  PA6 | Keyboard row E    | Output, open drain
+ *  PA7 | Keyboard row F    | Output, open drain
+ *  PA8 | Keyboard row G    | Output, open drain
+ *  PA10 | Keyboard row H    | Output, open drain
+ *  PA15 | Keyboard row I    | Output, open drain
+ * source: ayabusa.dev
  *
  * The keyboard is a matrix that is laid out as follow:
  *
@@ -54,11 +55,11 @@ using namespace Regs;
 
 constexpr GPIO RowGPIO = GPIOA;
 constexpr uint8_t numberOfRows = 9;
-constexpr uint8_t RowPins[numberOfRows] = {1, 0, 2, 3, 4, 5, 6, 7, 8};
+constexpr uint8_t RowPins[numberOfRows] = {1, 0, 2, 3, 6, 7, 8, 10, 15};
 
 constexpr GPIO ColumnGPIO = GPIOC;
 constexpr uint8_t numberOfColumns = 6;
-constexpr uint8_t ColumnPins[numberOfColumns] = {0, 1, 2, 3, 4, 5};
+constexpr uint8_t ColumnPins[numberOfColumns] = {1, 9, 11, 4, 5, 6};
 
 /* Undefined keys numbers are: 7, 9, 10, 11, 35, 41, 47 and 53
  * Therefore we want to make sure those bits are forced to zero in
