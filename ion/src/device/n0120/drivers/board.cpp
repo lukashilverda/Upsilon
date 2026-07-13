@@ -1,6 +1,3 @@
-// IDK if it works, I have to look at it. Might work
-
-
 #include <drivers/board.h>
 #include <drivers/cache.h>
 #include <drivers/internal_flash.h>
