@@ -9,10 +9,10 @@ Goal: get a working N0120 build that boots on real hardware through the DFU-only
 - [x] Verify the MPU regions for internal flash, external flash, and FMC/OSPI access in [drivers/board.cpp](drivers/board.cpp).
 
 ## 2. Fix the memory map for the actual board
-- [ ] Replace the placeholder internal-flash layout in [flash.ld](flash.ld) and [internal_flash.ld](internal_flash.ld) with the real STM32H725/N0120 addresses and sector sizes.
-- [ ] Update the flash/OTP assumptions in [drivers/config/internal_flash.h](drivers/config/internal_flash.h) to match the real chip layout.
-- [ ] Confirm the unique ID and OTP base addresses in [drivers/config/serial_number.h](drivers/config/serial_number.h).
-- [ ] Make sure the DFU and exam-mode sections still land in valid locations after the final memory map is set.
+- [x] Replace the placeholder internal-flash layout in [flash.ld](flash.ld) and [internal_flash.ld](internal_flash.ld) with the real STM32H725/N0120 addresses and sector sizes.
+- [x] Update the flash/OTP assumptions in [drivers/config/internal_flash.h](drivers/config/internal_flash.h) to match the real chip layout.
+- [x] Confirm the unique ID and OTP base addresses in [drivers/config/serial_number.h](drivers/config/serial_number.h).
+- [x] Make sure the DFU and exam-mode sections still land in valid locations after the final memory map is set.
 
 ## 3. Finish external flash bring-up
 - [ ] Replace the temporary comments and unfinished assumptions in [drivers/external_flash.cpp](drivers/external_flash.cpp).

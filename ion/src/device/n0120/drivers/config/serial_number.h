@@ -8,11 +8,13 @@ namespace Device {
 namespace SerialNumber {
 namespace Config {
 
-/* N0120 placeholder unique-ID address.
- * Confirm against the STM32H725 reference manual before using this on real
- * hardware. */
+/* N0120 STM32H725 unique device ID address.
+ * Based on STM32H7 series specifications:
+ * - 96-bit unique device identifier in system memory
+ * - Address: 0x1FF1E800
+ */
 
-constexpr uint32_t UniqueDeviceIDAddress = 0x1FF07A10;
+constexpr uint32_t UniqueDeviceIDAddress = 0x1FF1E800;
 
 }
 }

@@ -5,24 +5,28 @@
  * would not match some of our requirements (for example, we want the code to be
  * written at a specific address (in Flash ROM) and the data at another. */
 
-/* N0120 placeholder memory map.
- * This file is still aligned with the compileable legacy device model until a
- * real STM32H725 memory layout is confirmed. */
+/* N0120 STM32H725 memory map.
+ * Based on STM32H725VET6 specifications:
+ * - 512KB Flash at 0x08000000
+ * - 64KB ITCM RAM at 0x00000000
+ * - 128KB DTCM RAM at 0x20000000
+ * - 320KB AXI SRAM (RAM_D1) at 0x24000000
+ * - 32KB AHB SRAM1 (RAM_D2) at 0x30000000
+ * - 16KB AHB SRAM2 (RAM_D3) at 0x38000000
+ */
 
 /* Let's instruct the linker about our memory layout.
  * This will let us use shortcuts such as ">INTERNAL_FLASH" to ask for a given section to
  * be stored in Flash. */
 
 MEMORY {
-  INTERNAL_FLASH (rx) : ORIGIN = 0x00200000, LENGTH = 64K
-  SRAM (rw)  : ORIGIN = 0x20000000, LENGTH = 256K
+  ITCMRAM (xrw)       : ORIGIN = 0x00000000, LENGTH = 64K
+  DTCMRAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 128K
+  INTERNAL_FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 512K
+  RAM_D1 (rw)         : ORIGIN = 0x24000000, LENGTH = 320K
+  RAM_D2 (rw)         : ORIGIN = 0x30000000, LENGTH = 32K
+  RAM_D3 (rw)         : ORIGIN = 0x38000000, LENGTH = 16K
   EXTERNAL_FLASH (rx) : ORIGIN = 0x90000000, LENGTH = 8M
-  /*
-  ITCM (rwx) : ORIGIN = 0x00000000, LENGTH = 16K
-  DTCM (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
-  SRAM1 (rwx) : ORIGIN = 0x20010000, LENGTH = 176K
-  SRAM2 (rwx) : ORIGIN = 0x2003C000, LENGTH = 16K
-   */
 }
 
 STACK_SIZE = 32K;
@@ -172,7 +176,7 @@ SECTIONS {
     *(.data)
     *(.data.*)
     _data_section_end_ram = .;
-  } >SRAM AT> INTERNAL_FLASH
+  } >RAM_D1 AT> INTERNAL_FLASH
 
   .bss (NOLOAD) : {
     /* The bss section contains data for all uninitialized variables
@@ -192,14 +196,14 @@ SECTIONS {
      * COMMON blocks. This can be disabled with -fno-common if needed. */
     *(COMMON)
     _bss_section_end_ram = .;
-  } >SRAM
+  } >RAM_D1
 
   .heap : {
     _heap_start = .;
     /* Note: We don't increment "." here, we set it. */
-    . = (ORIGIN(SRAM) + LENGTH(SRAM) - STACK_SIZE);
+    . = (ORIGIN(RAM_D1) + LENGTH(RAM_D1) - STACK_SIZE);
     _heap_end = .;
-  } >SRAM
+  } >RAM_D1
 
   .stack : {
     . = ALIGN(8);
@@ -207,7 +211,7 @@ SECTIONS {
     . += (STACK_SIZE - 8);
     . = ALIGN(8);
     _stack_start = .;
-  } >SRAM
+  } >RAM_D1
 
   /DISCARD/ : {
     /* exidx and extab are needed for unwinding, which we don't use */
