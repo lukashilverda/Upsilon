@@ -3,7 +3,7 @@
 Goal: get a working N0120 build that boots on real hardware through the DFU-only flow.
 
 ## 1. Replace the placeholder H725 board bring-up
-- [ ] Rewrite the reset/clock/power/flash/MPU initialization in [drivers/board.cpp](drivers/board.cpp) so it matches the STM32H725 instead of the legacy F4/F7-style bring-up.
+- [x] Rewrite the reset/clock/power/flash/MPU initialization in [drivers/board.cpp](drivers/board.cpp) so it matches the STM32H725 instead of the legacy F4/F7-style bring-up.
 - [ ] Add or finish the H7-specific register support needed by that init path in [regs/regs.h](regs/regs.h) and the related register headers under [regs/](regs/) and [regs/config/](regs/config/).
 - [ ] Recheck the clock tree constants and peripheral prescalers in [drivers/config/clocks.h](drivers/config/clocks.h) against the real N0120/H725 clock plan.
 - [ ] Verify the MPU regions for internal flash, external flash, and FMC/OSPI access in [drivers/board.cpp](drivers/board.cpp).
