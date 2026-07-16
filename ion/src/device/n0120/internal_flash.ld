@@ -1,20 +1,24 @@
 /* Same as flash.ld but everything is linked in internal flash.
- * N0120 placeholder memory map until the STM32H725 layout is fully defined. */
+ * STM32H725 memory map for internal-flash-only builds. */
 
 MEMORY {
-  INTERNAL_FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 64K
-  SRAM (rw)  : ORIGIN = 0x20000000, LENGTH = 256K
+  ITCMRAM (xrw)       : ORIGIN = 0x00000000, LENGTH = 64K
+  DTCMRAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 128K
+  INTERNAL_FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 512K
+  RAM_D1 (rw)         : ORIGIN = 0x24000000, LENGTH = 320K
+  RAM_D2 (rw)         : ORIGIN = 0x30000000, LENGTH = 32K
+  RAM_D3 (rw)         : ORIGIN = 0x38000000, LENGTH = 16K
 }
 
 STACK_SIZE = 32K;
 TRAMPOLINES_OFFSET = 0xE000;
-CUSTOM_TRAMPOLINES_OFFSET = 64K - 64;
-FLASH_SECOND_SECTOR_OFFSET = 16K;
-FLASH_SECOND_SECTOR_SIZE = 16K;
+CUSTOM_TRAMPOLINES_OFFSET = 512K - 64;
+FLASH_SECOND_SECTOR_OFFSET = 8K;
+FLASH_SECOND_SECTOR_SIZE = 8K;
 
 SECTIONS {
   .isr_vector_table ORIGIN(INTERNAL_FLASH) : {
-    /* When booting, the STM32F412 fetches the content of address 0x0, and
+    /* When booting, the STM32H725 fetches the content of address 0x0, and
      * extracts from it various key infos: the initial value of the PC register
      * (program counter), the initial value of the stack pointer, and various
      * entry points to interrupt service routines. This data is called the ISR
@@ -80,7 +84,7 @@ SECTIONS {
     *(.data)
     *(.data.*)
     _data_section_end_ram = .;
-  } >SRAM AT> INTERNAL_FLASH
+  } >RAM_D1 AT> INTERNAL_FLASH
 
   .trampolines_table : {
     . = ORIGIN(INTERNAL_FLASH) + TRAMPOLINES_OFFSET;
@@ -110,14 +114,14 @@ SECTIONS {
      * COMMON blocks. This can be disabled with -fno-common if needed. */
     *(COMMON)
     _bss_section_end_ram = .;
-  } >SRAM
+  } >RAM_D1
 
   .heap : {
     _heap_start = .;
     /* Note: We don't increment "." here, we set it. */
-    . = (ORIGIN(SRAM) + LENGTH(SRAM) - STACK_SIZE);
+    . = (ORIGIN(RAM_D1) + LENGTH(RAM_D1) - STACK_SIZE);
     _heap_end = .;
-  } >SRAM
+  } >RAM_D1
 
   .stack : {
     . = ALIGN(8);
@@ -125,5 +129,5 @@ SECTIONS {
     . += (STACK_SIZE - 8);
     . = ALIGN(8);
     _stack_start = .;
-  } >SRAM
+  } >RAM_D1
 }

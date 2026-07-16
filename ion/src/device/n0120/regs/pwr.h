@@ -42,6 +42,13 @@ public:
     REGS_BOOL_FIELD_W(BREN, 0);
   };
 
+  class CR3 : Register32 {
+  public:
+    REGS_BOOL_FIELD(BYPASS, 0);
+    REGS_BOOL_FIELD(LDOEN, 1);
+    REGS_BOOL_FIELD(SMPSEN, 2);
+  };
+
   class CPUCR : Register32 {
   public:
     REGS_BOOL_FIELD_W(PDDS_D1, 0);
@@ -55,6 +62,8 @@ public:
   class D3CR : Register32 {
   public:
     REGS_BOOL_FIELD_R(VOSRDY, 13);
+    REGS_BOOL_FIELD(VOS0, 14);
+    REGS_BOOL_FIELD(VOS1, 15);
     enum class VOS : uint8_t {
       VOS3 = 0,
       VOS2 = 1,
@@ -79,6 +88,7 @@ public:
   REGS_REGISTER_AT(CR1, 0x00);
   REGS_REGISTER_AT(CSR1, 0x04);
   REGS_REGISTER_AT(CR2, 0x08);
+  REGS_REGISTER_AT(CR3, 0x0C);
   REGS_REGISTER_AT(CPUCR, 0x10);
   REGS_REGISTER_AT(D3CR, 0x18);
   REGS_REGISTER_AT(WKUPCR, 0x20);

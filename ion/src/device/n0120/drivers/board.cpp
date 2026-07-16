@@ -1,6 +1,3 @@
-// IDK if it works, I have to look at it. 
-
-
 #include <drivers/board.h>
 #include <drivers/cache.h>
 #include <drivers/internal_flash.h>
@@ -38,28 +35,43 @@ namespace Board {
 using namespace Regs;
 
 
-// I will look at this function later, I think it needs some changes to work with the N0120.
+// Minimal MPU setup used by the bootloader: it only needs the external
+// (Q)SPI flash mapped in as executable/cacheable memory, unlike initMPU()
+// which also sets up the FMC/LCD regions.
 
 void bootloaderMPU() {
-  // 1. Disable the MPU (memory protection unit)
-  // 1.1 Memory barrier (Data Memory Barrier) to ensure that all explicit memory accesses before this instruction are completed before any subsequent instructions are executed.
+  // 1. Memory barrier before touching the MPU.
   Cache::dmb();
 
-  // 1.3 Disable the MPU and clear the control register
+  // 2. Disable the MPU while we reconfigure it.
   MPU.CTRL()->setENABLE(false);
 
+  // 3. Region 7: the QSPI-mapped external flash at 0x90000000. This must
+  // define SIZE/AP/TEX/S/C/B like every other region in initMPU() below -
+  // leaving them unset left the region's size and access permissions
+  // undefined, which is why this never reliably mapped the flash as
+  // executable code. Mirrors the executable QSPI region in initMPU().
   MPU.RNR()->setREGION(7);
-  MPU.RBAR()->setADDR(0x90000000);        // Base address of QuadSPI
+  MPU.RBAR()->setADDR(0x90000000);
+  MPU.RASR()->setSIZE(MPU::RASR::RegionSize::_8MB);
+  MPU.RASR()->setAP(MPU::RASR::AccessPermission::RW);
   MPU.RASR()->setXN(false);
+  MPU.RASR()->setTEX(0);
+  MPU.RASR()->setS(0);
+  MPU.RASR()->setC(1);
+  MPU.RASR()->setB(0);
   MPU.RASR()->setENABLE(true);
 
-  // 2.3 Enable MPU because the bootloader needs to access the external flash memory
-  MPU.CTRL()->setENABLE(true);
-
-  // 3. Data/instruction synchronisation barriers to ensure that the new MPU configuration is used by subsequent instructions.
-  Cache::disable();
+  // 4. Synchronisation barriers before the new MPU config takes effect.
   Cache::dsb();
   Cache::isb();
+
+  // 5. Enable the MPU, then the cache. The previous version disabled the
+  // cache here instead of enabling it, which was backwards - without the
+  // MPU region marking QSPI as cacheable (step 3), enabling the L1 cache
+  // beforehand risks speculative reads outside FSIZE per AN4760.
+  MPU.CTRL()->setENABLE(true);
+  Cache::enable();
 }
 
 void initMPU() {
@@ -204,8 +216,21 @@ void initClocks() {
   RCC.PLLCFGR()->setPLL1PEN(true);
   RCC.PLLCFGR()->setPLL1QEN(true);
 
-  // Voltage scale 1 (VOS1) for 192 MHz operation on STM32H725
-  PWR.D3CR()->setVOS(PWR::D3CR::VOS::VOS1);
+  /* System supply configuration (RM0468 §6.8.1). This board runs off a
+   * 3.7V single-cell battery through the H725's own SMPS step-down, with no
+   * external LDO/SMPS inductor network in front of it - i.e. "Direct SMPS
+   * supply" (LDO bypassed). This MUST be configured before VOS is touched:
+   * VOS is not allowed to change until the regulator reports ACTVOSRDY for
+   * the newly selected supply. */
+  PWR.CR3()->setLDOEN(false);
+  PWR.CR3()->setBYPASS(false);
+  PWR.CR3()->setSMPSEN(true);
+  while (!PWR.CSR1()->getACTVOSRDY()) {}
+
+  // Voltage scale 1 (VOS1) for 192 MHz operation on STM32H725.
+  // VOS is a 2-bit field at D3CR[15:14]; Scale1 = both bits set.
+  PWR.D3CR()->setVOS0(true);
+  PWR.D3CR()->setVOS1(true);
   while (!PWR.D3CR()->getVOSRDY()) {}
 
   /* After reset the Flash runs as fast as the CPU. When we clock the CPU faster
@@ -321,15 +346,8 @@ void shutdownClocks(bool keepLEDAwake) {
 
 constexpr int k_pcbVersionOTPIndex = 0;
 
-/* As we want the PCB versions to be in ascending order chronologically, and
- * because the OTP are initialized with 1s, we store the bitwise-not of the
- * version number. This way, devices with blank OTP are considered version 0. */
-
 PCBVersion pcbVersion() {
 #if IN_FACTORY
-  /* When flashing for the first time, we want all systems that depend on the
-   * PCB version to function correctly before flashing the PCB version. This
-   * way, flashing the PCB version can be done last. */
   return PCB_LATEST;
 #else
   PCBVersion version = readPCBVersionInMemory();
@@ -360,18 +378,11 @@ bool pcbVersionIsLocked() {
 void jumpToInternalBootloader() {}
 
 void initFPU() {
-  // Enable CP10 and CP11 (Floating Point Unit)
   CORTEX.CPACR()->setAccess(10, CORTEX::CPACR::Access::Full);
   CORTEX.CPACR()->setAccess(11, CORTEX::CPACR::Access::Full);
-
-  // Flush pipeline so subsequent instructions see the updated CPACR
-  __asm volatile ("dsb");
-  __asm volatile ("isb");
 }
 
 void initCompensationCell() {
-  /* The output speed of some GPIO pins is set to high, in which case,
-   * the compensation cell should be enabled. */
   SYSCFG.CMPCR()->setCMP_PD(true);
   while (!SYSCFG.CMPCR()->getREADY()) {
   }
@@ -437,8 +448,6 @@ void setClockFrequency(Frequency f) {
     Device::Timing::setSysTickFrequency(Ion::Device::Clocks::Config::HCLKFrequency);
   } else {
     assert(f == Frequency::Low);
-
-    // Change the systick frequency to compensate the HCLK frequency change
     Device::Timing::setSysTickFrequency(Ion::Device::Clocks::Config::HCLKLowFrequency);
     RCC.D1CFGR()->setHPRE(Clocks::Config::AHBLowFrequencyPrescalerReg);
   }
@@ -462,12 +471,8 @@ void lockUnlockedPCBVersion() {
   if (pcbVersionIsLocked()) {
     return;
   }
-  /* PCB version is unlocked : the device is a N0110 that has been
-   * produced prior to the pcb revision 3.43. */
   PCBVersion version = Device::Board::pcbVersion();
   if (version != 0) {
-    /* Some garbage has been written in OTP0. We overwrite it fully, which is
-     * interepreted as blank. */
     writePCBVersion(k_alternateBlankVersion);
   }
   lockPCBVersion();
