@@ -1,3 +1,5 @@
+// Not changed for N0120, but it should be checked if it works
+
 #ifndef ION_DEVICE_N0120_CONFIG_EXAM_MODE_H
 #define ION_DEVICE_N0120_CONFIG_EXAM_MODE_H
 

@@ -1,3 +1,6 @@
+// TODO: Timings for the display on line 14-16
+
+
 #ifndef ION_DEVICE_N0120_CONFIG_DISPLAY_H
 #define ION_DEVICE_N0120_CONFIG_DISPLAY_H
 
@@ -30,7 +33,8 @@ constexpr static GPIOPin TearingEffectPin = GPIOPin(GPIOB, 11);
 constexpr static DMA DMAEngine = DMA2;
 constexpr static int DMAStream = 0;
 
-constexpr static int HCLKFrequencyInMHz = 192;
+constexpr static int HCLKFrequencyInMHz =
+    Ion::Device::Clocks::Config::HCLKFrequency / 1000000;  // Fix for N0120, see clocks.h
 
 constexpr static bool DisplayInversion = true;
 

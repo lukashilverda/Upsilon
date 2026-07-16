@@ -1,3 +1,5 @@
+// Works for the N0120
+
 #ifndef ION_DEVICE_N0120_CONFIG_LED_H
 #define ION_DEVICE_N0120_CONFIG_LED_H
 

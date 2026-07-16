@@ -1,3 +1,5 @@
+// Has to work on N0120, it is a copy of the n0110 one
+
 #ifndef ION_DEVICE_N0120_CONFIG_CONSOLE_H
 #define ION_DEVICE_N0120_CONFIG_CONSOLE_H
 
