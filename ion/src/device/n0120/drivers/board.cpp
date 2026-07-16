@@ -49,7 +49,7 @@ void bootloaderMPU() {
   MPU.CTRL()->setENABLE(false);
 
   MPU.RNR()->setREGION(7);
-  MPU.RBAR()->setADDR(0x90000000);
+  MPU.RBAR()->setADDR(0x90000000);        // Base address of QuadSPI
   MPU.RASR()->setXN(false);
   MPU.RASR()->setENABLE(true);
 
@@ -123,7 +123,7 @@ void initMPU() {
    * Quad-SPI region corresponding to the External Chip as executable and
    * fully accessible (AN4861). */
   MPU.RNR()->setREGION(sector++);
-  MPU.RBAR()->setADDR(0x90000000);
+  MPU.RBAR()->setADDR(0x90000000);        // Base address of QuadSPI
   MPU.RASR()->setSIZE(MPU::RASR::RegionSize::_256MB);
   MPU.RASR()->setAP(MPU::RASR::AccessPermission::NoAccess);
   MPU.RASR()->setXN(true);
@@ -134,7 +134,7 @@ void initMPU() {
   MPU.RASR()->setENABLE(true);
 
   MPU.RNR()->setREGION(sector++);
-  MPU.RBAR()->setADDR(0x90000000);
+  MPU.RBAR()->setADDR(0x90000000);        // Base address of QuadSPI
   MPU.RASR()->setSIZE(MPU::RASR::RegionSize::_8MB);
   MPU.RASR()->setAP(MPU::RASR::AccessPermission::RW);
   MPU.RASR()->setXN(false);
@@ -360,10 +360,13 @@ bool pcbVersionIsLocked() {
 void jumpToInternalBootloader() {}
 
 void initFPU() {
-// http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0553a/BABDBFBJ.html
+  // Enable CP10 and CP11 (Floating Point Unit)
   CORTEX.CPACR()->setAccess(10, CORTEX::CPACR::Access::Full);
   CORTEX.CPACR()->setAccess(11, CORTEX::CPACR::Access::Full);
-  // FIXME: The pipeline should be flushed at this point
+
+  // Flush pipeline so subsequent instructions see the updated CPACR
+  __asm volatile ("dsb");
+  __asm volatile ("isb");
 }
 
 void initCompensationCell() {
@@ -375,10 +378,10 @@ void initCompensationCell() {
 }
 
 void shutdownCompensationCell() {
-  SYSCFG.CMPCR()->setCMP_PD(false);
+  SYSCFG.CMPCR()->setCMP_PD(false); // Disable the compensation cell to save power
 }
 
-void initPeripherals(bool initBacklight) {
+void initPeripherals(bool initBacklight) { // Initialise all peripherals
   initCompensationCell();
   Display::init();
   if (initBacklight) {
@@ -393,7 +396,7 @@ void initPeripherals(bool initBacklight) {
   Timing::init();
 }
 
-void shutdownPeripherals(bool keepLEDAwake) {
+void shutdownPeripherals(bool keepLEDAwake) { // Shutdown all peripherals, except the LCD if exam mode is on
   Timing::shutdown();
   SWD::shutdown();
   Console::shutdown();
@@ -418,22 +421,37 @@ void setStandardFrequency(Frequency f) {
   sStandardFrequency = f;
 }
 
+void updateTIM3Clock() {  // Update TIM3 timing (used after HCLK/APB clock change)
+  uint32_t tim3Clock = Clocks::Config::APB1Frequency * 2;  // Fix for correct clock frequency
+
+  // Keep the same LED blink frequency
+  TIM3->PSC = (tim3Clock / 1000000) - 1; // 1 MHz timer tick
+  TIM3->ARR = 1000 - 1;                 // 1 ms resolution
+
+  TIM3->EGR = TIM_EGR_UG; // Force update
+}
+
 void setClockFrequency(Frequency f) {
-  // TODO: Update TIM3 prescaler or ARR to avoid irregular LED blinking
   if (f == Frequency::High) {
     RCC.D1CFGR()->setHPRE(RCC::D1CFGR::HPRE::Div1);
     Device::Timing::setSysTickFrequency(Ion::Device::Clocks::Config::HCLKFrequency);
   } else {
     assert(f == Frequency::Low);
-    // Change the systick frequency to compensate the KCLK frequency change
+
+    // Change the systick frequency to compensate the HCLK frequency change
     Device::Timing::setSysTickFrequency(Ion::Device::Clocks::Config::HCLKLowFrequency);
     RCC.D1CFGR()->setHPRE(Clocks::Config::AHBLowFrequencyPrescalerReg);
   }
+
+  // Update TIM3 timing after HCLK/APB clock change
+  updateTIM3Clock();
 }
+
+
 
 }
 }
-}
+
 
 namespace Ion {
 namespace Board {
